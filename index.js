@@ -1,14 +1,14 @@
+require('dotenv').config();
+
 const express = require('express');
-const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
-const API_KEY = 'AIzaSyD3HojURw9MS4VjD992WUm-7wrMZaOz5-4';
+const API_KEY = process.env.GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
@@ -34,18 +34,13 @@ async function callGemini(text) {
   const prompt = systemPrompt.replace('{text}', text);
   const result = await model.generateContent(prompt);
   const raw = result.response.text();
-
-  const cleaned = raw
-    .replace(/```(java|python|c\+\+|c|typescript|javascript|go|ruby|php)?/g, '')
-    .trim();
-
+  const cleaned = raw.replace(/```(java|python|c\+\+|c|typescript|javascript|go|ruby|php)?/g, '').trim();
   const timestamp = `// Generated on: ${getTimeStamp()}\n`;
   return timestamp + cleaned;
 }
 
 app.post('/generate', async (req, res) => {
   const { text } = req.body;
-
   if (!text) return res.status(400).send('Missing text');
 
   try {
@@ -53,12 +48,11 @@ app.post('/generate', async (req, res) => {
     res.setHeader('Content-Type', 'text/plain');
     res.send(output);
   } catch (err) {
-    console.error(err);
     res.status(500).send('Error generating content');
   }
 });
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
-  /* Server running on port 3000 */
+  /* Server running on port ${PORT} */
 });
